@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bastion-net
+
+  bastion-api:
+    build:
+      context: ./bastion_api
+      dockerfile: Dockerfile
+    image: bastion-api
+    platform: linux/amd64
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:mysecretpassword@db:5432/postgres
+      RUST_LOG: info
+      PORT: 8080
+    depends_on:
+      - db
+    networks:
+      - bastion-net
+
+  bastion:
+    build:
+      context: .
+    image: bastion-server
+    platform: linux/amd64
+    ports:
+      - "2222:22"
+    environment:
+      BASTION_API_URL: http://bastion-api:8080
+      DATABASE_URL: postgresql://postgres:mysecretpassword@db:5432/postgres
+    volumes:
+      # Sync compiled binary
+      - ./bastion_cli/target/x86_64-unknown-linux-musl/release/bastion_cli:/usr/local/bin/bastion_cli:ro
+    depends_on:
+      - db
+      - bastion-api
+    networks:
+      - bastion-net
+
+networks:
+  bastion-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

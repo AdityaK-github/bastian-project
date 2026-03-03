@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  bastion:
+    build:
+      context: .
+    image: bastion-server
+    platform: linux/amd64
+    ports:
+      - "2222:22"
+    volumes:
+      # This is the key part:
+      # It syncs your compiled binary from your local machine
+      # directly into the running container, overwriting the old one.
+      - ./bastion_cli/target/x86_64-unknown-linux-musl/release/bastion_cli:/usr/local/bin/bastion_cli:ro
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/postgres
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  bastion-api:
+    build:
+      context: ./bastion_api
+      dockerfile: Dockerfile
+    image: bastion-api
+    platform: linux/amd64
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:mysecretpassword@db:5432/postgres
+      RUST_LOG: info
+      PORT: 8080
+    depends_on:
+      - db
+
+  # Test "production" server for end-to-end testing
+  prod-server:
+    image: rastasheep/ubuntu-sshd:18.04
+    platform: linux/amd64
+    environment:
+      - SSH_ENABLE_PASSWORD_AUTH=true
+    ports:
+      - "2223:22"  # Exposed for debugging, but bastion will connect via internal network
+
+  client:
+    image: ubuntu:20.04
+    container_name: bastion-client
+    command: /bin/bash -c "apt-get update && apt-get install -y openssh-client iputils-ping && chmod 400 /root/id_ed25519 && tail -f /dev/null"
+    volumes:
+      - ./bastion_dev_key:/root/id_ed25519
+    depends_on:
+      - bastion
+
+volumes:
+  postgres_data:

@@ -1,0 +1,37 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# SSH keys (never commit private keys)
+bastion_dev_key
+bastion_dev_key.pub
+key_admin
+key_admin.pub
+key_test
+key_test.pub
+authorized_keys
+*.pem
+
+# Environment
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker volumes
+postgres_data/
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/

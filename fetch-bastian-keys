@@ -1,0 +1,64 @@
+#!/bin/bash
+# fetch-bastian-keys - Called by SSHD's AuthorizedKeysCommand
+# Receives username as $1, queries API, returns active SSH keys
+
+# Ensure we have a valid path
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+set -e
+
+USERNAME="$1"
+
+
+# Validate input
+if [ -z "$USERNAME" ]; then
+    exit 0
+fi
+
+# IMPORTANT:
+# In this Docker container, only the 'dev' OS user exists.
+# We want to allow multiple DB users (intern, alice, etc.) to log in via SSH using the 'dev' account.
+# So, if SSHD requests keys for 'dev', we need to fetch ALL keys for ALL users who are allowed to use the bastion.
+# Or, simpler: We only allow logging in as 'dev', but we return KEYS for users 'dev', 'intern', 'alice', etc.
+# The CLI will later figure out who it is based on the Fingerprint.
+
+if [ "$USERNAME" == "dev" ]; then
+    # Fetch keys for ALL users or specific users mapped to dev?
+    # For now, let's fetch keys for 'dev' AND 'intern' (mapped in reset script)
+    # A robust solution would have an API endpoint like /api/all-active-keys
+    # But to test the specific flow, let's hack it to return multiple users' keys.
+    
+    API_URL="${BASTION_API_URL:-http://bastion-api:8080}"
+    
+    KEYS_DEV=$(curl -fsSL "${API_URL}/api/keys/dev" 2>/dev/null)
+    KEYS_INTERN=$(curl -fsSL "${API_URL}/api/keys/intern" 2>/dev/null)
+    
+    # Process keys to add environment variable (Fingerprint)
+    
+    # helper function to process a block of keys
+    process_keys() {
+        local keys="$1"
+        echo "$keys" | while IFS= read -r line; do
+            # Trim whitespace
+            line=$(echo "$line" | xargs)
+            if [ -n "$line" ]; then
+                # Calculate fingerprint
+                FP=$(echo "$line" | ssh-keygen -lf - | awk '{print $2}')
+                if [ -n "$FP" ]; then
+                    echo "environment=\"BASTION_KEY_FINGERPRINT=$FP\" $line"
+                fi
+            fi
+        done
+    }
+
+    process_keys "$KEYS_DEV"
+    process_keys "$KEYS_INTERN"
+else
+    # Fallback for other users if they exist in OS
+    API_URL="${BASTION_API_URL:-http://bastion-api:8080}"
+    KEYS=$(curl -fsSL "${API_URL}/api/keys/${USERNAME}" 2>/dev/null)
+    process_keys "$KEYS"
+fi
+
+# Always exit 0 - SSHD expects clean exit even if no keys found
+exit 0

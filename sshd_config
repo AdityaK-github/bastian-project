@@ -1,0 +1,23 @@
+# Basic SSHd config
+
+Port 22
+PermitRootLogin no
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM yes
+PrintMotd no
+AcceptEnv LANG LC\_\*
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Dynamic SSH key fetching from API
+
+AuthorizedKeysCommand /usr/local/bin/fetch-bastian-keys
+AuthorizedKeysCommandUser nobody
+PermitUserEnvironment yes
+
+# Your custom command for the user
+
+# Make sure to use the same username as in your Dockerfile
+
+Match User dev,intern_dave
+ForceCommand /usr/local/bin/bastion_wrapper.sh
