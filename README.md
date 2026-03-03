@@ -156,11 +156,8 @@ ssh -i <key> -p 2222 dev@localhost <command> [args]
 ├── Dockerfile               # Bastion SSH server image
 ├── docker-compose.yml       # Core services (bastion, API, database)
 ├── docker-compose-with-prod.yml  # Extended compose with test prod server and client
-├── reset_demo_env.sh        # Reset environment with fresh demo users/keys
-├── setup_ssh_demo.sh        # Quick setup for SSH testing
 ├── user_management.sh       # Interactive user management menu
 ├── add_spare_key.sh         # Helper to register an additional SSH key
-└── test_helper.sh           # Interactive testing menu
 ```
 
 ## Database Schema
