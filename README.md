@@ -72,7 +72,7 @@ docker exec -i <db-container> psql -U postgres -d postgres < db_scripts/migratio
 
 ### 4. Set up users and keys
 
-Use the `reset_demo_env.sh` script to create demo users with fresh SSH keys, or manually insert users and keys via SQL / the CLI.
+Insert users and SSH keys via SQL or the CLI. You can use `db_scripts/test_setup.sql` as a starting point for sample data.
 
 ### 5. Connect
 
