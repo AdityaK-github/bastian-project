@@ -156,7 +156,6 @@ ssh -i <key> -p 2222 dev@localhost <command> [args]
 ├── Dockerfile               # Bastion SSH server image
 ├── docker-compose.yml       # Core services (bastion, API, database)
 ├── docker-compose-with-prod.yml  # Extended compose with test prod server and client
-├── user_management.sh       # Interactive user management menu
 ├── add_spare_key.sh         # Helper to register an additional SSH key
 ```
 
